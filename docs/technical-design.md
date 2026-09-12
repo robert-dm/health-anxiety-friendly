@@ -2,11 +2,34 @@
 
 ## 1. Context
 
-This document translates the MVP described in `doc/product-spec.md`, `doc/screens.md`, and `AGENTS.md` into an initial implementation design.
+This document translates the MVP described in `docs/product-spec.md`, `docs/screens.md`, and `AGENTS.md` into an implementation design using a deliberately small stack:
 
-Note: the repository currently contains `doc/` while `AGENTS.md` references `docs/`. This file is created at `docs/technical-design.md` as requested.
+- Plain HTML
+- CSS
+- Vanilla JavaScript
+- Node.js
+- SQLite
+- Server-managed sessions
 
-## 2. Product Constraints That Affect Architecture
+The canonical documentation directory is `docs/`.
+
+## 2. Architecture Choice
+
+The app should be a small server-rendered web application. The browser receives HTML pages with CSS and light JavaScript for progressive enhancement. Core actions such as login, review submission, moderation, favorites, and reports go through server routes.
+
+This keeps the MVP simpler than a frontend framework plus managed backend while still supporting authentication, moderation, privacy, and persistent data.
+
+Recommended runtime:
+
+- `node:http` or a very small HTTP router
+- SQLite database file
+- SQL migration files committed to the repo
+- HTML rendered from server-side templates or simple view helpers
+- Static assets served from `public/`
+
+Avoid adding a client-side framework unless a specific screen becomes hard to maintain without one.
+
+## 3. Product Constraints That Affect Architecture
 
 - Objective profile data, patient experiences, and community-derived scores must remain separate in storage and UI.
 - Ratings must not be presented as objective medical-quality rankings.
@@ -18,358 +41,364 @@ Note: the repository currently contains `doc/` while `AGENTS.md` references `doc
 - Sensitive personal data collection must be minimal: no diagnosis, medical history, DNI, date of birth, or home address.
 - Moderation and reporting are MVP requirements, not later enhancements.
 
-## 3. Proposed Project Structure
+## 4. Proposed Project Structure
 
 ```text
-app/
-  (public)/
-    page.tsx
-    buscar/page.tsx
-    profesionales/[slug]/page.tsx
-    centros/[slug]/page.tsx
-    guias/page.tsx
-    como-funciona/page.tsx
-  (auth)/
-    ingresar/page.tsx
-    registro/page.tsx
-  (app)/
-    cuenta/page.tsx
-    agregar/page.tsx
-    review/[targetType]/[targetId]/page.tsx
-  admin/
-    page.tsx
-    profesionales/page.tsx
-    centros/page.tsx
-    reviews/page.tsx
-    reportes/page.tsx
-components/
+public/
+  assets/
+  styles/
+    main.css
+  scripts/
+    main.js
+src/
+  server.js
+  config.js
+  db/
+    connection.js
+    migrate.js
+    migrations/
+      001_initial_schema.sql
+    seed.sql
   auth/
-  layout/
-  profiles/
-  reviews/
-  search/
-  moderation/
-  ui/
-lib/
-  supabase/
-    client.ts
-    server.ts
-    middleware.ts
-  auth/
-    roles.ts
-    guards.ts
+    passwords.js
+    sessions.js
+    guards.js
+  routes/
+    public.js
+    auth.js
+    account.js
+    reviews.js
+    suggestions.js
+    reports.js
+    admin.js
+  views/
+    layout.js
+    pages/
+    components/
+  domain/
+    ratings.js
+    search.js
+    moderation.js
+    slugs.js
   validation/
-  ratings/
-  search/
-  moderation/
-types/
-  database.ts
-  domain.ts
-supabase/
-  migrations/
-  seed.sql
+    auth.js
+    reviews.js
+    suggestions.js
+    reports.js
 docs/
   technical-design.md
+data/
+  .gitkeep
 ```
 
-App Router route groups should keep public browsing, authenticated user flows, and admin workflows separate. Server Components should fetch public data where practical; mutations should use Server Actions or Route Handlers with server-side authorization.
+The SQLite file should live outside tracked source by default, for example `data/app.db`, and `data/*.db` should be ignored by Git.
 
-## 4. Domain Model
+## 5. Routes
 
-### Auth and User Tables
+Public routes:
 
-Supabase Auth owns authentication. Public application metadata lives in normalized tables.
+- `GET /`
+- `GET /buscar`
+- `GET /profesionales/:slug`
+- `GET /centros/:slug`
+- `GET /guias`
+- `GET /como-funciona`
 
-#### `profiles`
+Auth routes:
 
-- `id uuid primary key references auth.users(id) on delete cascade`
+- `GET /ingresar`
+- `POST /ingresar`
+- `GET /registro`
+- `POST /registro`
+- `POST /salir`
+
+Authenticated user routes:
+
+- `GET /cuenta`
+- `GET /agregar`
+- `POST /agregar/profesional`
+- `POST /agregar/centro`
+- `GET /review/profesional/:id`
+- `GET /review/centro/:id`
+- `POST /review/profesional/:id`
+- `POST /review/centro/:id`
+- `POST /reviews/:id/reportar`
+- `POST /reviews/:id/util`
+- `POST /favoritos/profesional/:id`
+- `POST /favoritos/centro/:id`
+
+Admin routes:
+
+- `GET /admin`
+- `GET /admin/profesionales`
+- `GET /admin/centros`
+- `GET /admin/reviews`
+- `GET /admin/reportes`
+- `POST /admin/reviews/:id/status`
+- `POST /admin/reportes/:id/status`
+- `POST /admin/profesionales/:id/verificacion`
+- `POST /admin/centros/:id/verificacion`
+
+## 6. Database Schema
+
+Use SQLite with explicit foreign keys enabled on every connection:
+
+```sql
+PRAGMA foreign_keys = ON;
+```
+
+Use `TEXT` ids containing UUIDs generated by the application. UUID strings make future migration easier than integer-only ids.
+
+### `users`
+
+- `id text primary key`
+- `email text not null unique`
+- `password_hash text not null`
 - `display_name text`
 - `anonymous_name text not null`
-- `role user_role not null default 'user'`
-- `status user_status not null default 'active'`
-- `reputation_score numeric(6,2) not null default 0`
-- `community_guidelines_accepted_at timestamptz`
-- `created_at timestamptz not null default now()`
-- `updated_at timestamptz not null default now()`
+- `role text not null default 'user'`
+- `status text not null default 'active'`
+- `reputation_score real not null default 0`
+- `community_guidelines_accepted_at text`
+- `created_at text not null`
+- `updated_at text not null`
 
-Enums:
+Roles: `user`, `professional`, `facility_admin`, `moderator`, `admin`.
 
-- `user_role`: `user`, `professional`, `facility_admin`, `moderator`, `admin`
-- `user_status`: `active`, `warned`, `suspended`, `banned`
+Statuses: `active`, `warned`, `suspended`, `banned`.
 
-### Taxonomy Tables
+### `sessions`
 
-#### `specialties`
+- `id text primary key`
+- `user_id text not null references users(id) on delete cascade`
+- `token_hash text not null unique`
+- `expires_at text not null`
+- `created_at text not null`
 
-- `id uuid primary key`
+Store only a hash of the session token. The raw token is sent to the browser in an `HttpOnly`, `Secure`, `SameSite=Lax` cookie.
+
+### `specialties`
+
+- `id text primary key`
 - `name text not null unique`
 - `slug text not null unique`
-- `category specialty_category not null`
-- `active boolean not null default true`
+- `category text not null`
+- `active integer not null default 1`
 
-`specialty_category`: `mental_health`, `medical`, `other`
+Categories: `mental_health`, `medical`, `other`.
 
-#### `study_types`
+### `study_types`
 
-- `id uuid primary key`
+- `id text primary key`
 - `name text not null unique`
 - `slug text not null unique`
-- `active boolean not null default true`
+- `active integer not null default 1`
 
-#### `locations`
+### `locations`
 
-- `id uuid primary key`
+- `id text primary key`
 - `country_code text not null default 'AR'`
 - `province text`
 - `city text not null`
 - `zone text`
 - `neighborhood text`
-- `lat numeric(9,6)`
-- `lng numeric(9,6)`
+- `lat real`
+- `lng real`
 
-Initial seed data should prioritize CABA and Gran Buenos Aires but keep the schema country-neutral.
+Initial seed data should prioritize CABA and Gran Buenos Aires without hardcoding Argentina-only assumptions.
 
-### Professional Profiles
+### `professionals`
 
-#### `professionals`
-
-- `id uuid primary key`
+- `id text primary key`
 - `slug text not null unique`
 - `first_name text`
 - `last_name text`
 - `display_name text not null`
 - `bio text`
-- `primary_specialty_id uuid references specialties(id)`
+- `primary_specialty_id text references specialties(id)`
 - `license_number text`
 - `institution text`
-- `location_id uuid references locations(id)`
+- `location_id text references locations(id)`
 - `address_public text`
 - `website_url text`
 - `public_phone text`
-- `care_modes care_mode[] not null default '{}'`
-- `verification_status verification_status not null default 'community'`
-- `claimed_by uuid references profiles(id)`
-- `claim_status claim_status`
+- `care_modes text not null default '[]'`
+- `verification_status text not null default 'community'`
+- `claimed_by text references users(id)`
+- `claim_status text`
 - `source_notes text`
-- `created_by uuid references profiles(id)`
-- `created_at timestamptz not null default now()`
-- `updated_at timestamptz not null default now()`
+- `created_by text references users(id)`
+- `created_at text not null`
+- `updated_at text not null`
 
-Enums:
+Verification statuses: `community`, `incomplete`, `verified`, `claimed`, `suspended`.
 
-- `care_mode`: `in_person`, `virtual`
-- `verification_status`: `community`, `incomplete`, `verified`, `claimed`, `suspended`
-- `claim_status`: `pending`, `approved`, `rejected`, `revoked`
+### `professional_specialties`
 
-#### `professional_specialties`
-
-- `professional_id uuid references professionals(id) on delete cascade`
-- `specialty_id uuid references specialties(id) on delete restrict`
+- `professional_id text references professionals(id) on delete cascade`
+- `specialty_id text references specialties(id) on delete restrict`
 - primary key: `(professional_id, specialty_id)`
 
-### Facility Profiles
+### `facilities`
 
-#### `facilities`
-
-- `id uuid primary key`
+- `id text primary key`
 - `slug text not null unique`
 - `name text not null`
 - `description text`
-- `facility_type facility_type not null`
-- `location_id uuid references locations(id)`
+- `facility_type text not null`
+- `location_id text references locations(id)`
 - `address_public text`
 - `website_url text`
 - `public_phone text`
-- `verification_status verification_status not null default 'community'`
-- `claimed_by uuid references profiles(id)`
-- `claim_status claim_status`
+- `verification_status text not null default 'community'`
+- `claimed_by text references users(id)`
+- `claim_status text`
 - `source_notes text`
-- `created_by uuid references profiles(id)`
-- `created_at timestamptz not null default now()`
-- `updated_at timestamptz not null default now()`
+- `created_by text references users(id)`
+- `created_at text not null`
+- `updated_at text not null`
 
-`facility_type`: `diagnostic_center`, `clinic`, `lab`, `hospital`, `other`
+Facility types: `diagnostic_center`, `clinic`, `lab`, `hospital`, `other`.
 
-#### `facility_study_types`
+### `facility_study_types`
 
-- `facility_id uuid references facilities(id) on delete cascade`
-- `study_type_id uuid references study_types(id) on delete restrict`
+- `facility_id text references facilities(id) on delete cascade`
+- `study_type_id text references study_types(id) on delete restrict`
 - primary key: `(facility_id, study_type_id)`
 
-### Reviews
+### `reviews`
 
-Use explicit nullable foreign keys with a check constraint instead of a polymorphic key.
-
-#### `reviews`
-
-- `id uuid primary key`
-- `author_id uuid not null references profiles(id)`
-- `professional_id uuid references professionals(id) on delete cascade`
-- `facility_id uuid references facilities(id) on delete cascade`
-- `overall_rating smallint not null check (overall_rating between 1 and 5)`
+- `id text primary key`
+- `author_id text not null references users(id)`
+- `professional_id text references professionals(id) on delete cascade`
+- `facility_id text references facilities(id) on delete cascade`
+- `overall_rating integer not null check (overall_rating between 1 and 5)`
 - `visit_type text`
-- `study_type_id uuid references study_types(id)`
-- `approx_visit_month date`
+- `study_type_id text references study_types(id)`
+- `approx_visit_month text`
 - `comment text`
-- `anonymous boolean not null default true`
-- `status review_status not null default 'pending'`
+- `anonymous integer not null default 1`
+- `status text not null default 'pending'`
 - `moderation_note text`
 - `helpful_count integer not null default 0`
-- `created_at timestamptz not null default now()`
-- `updated_at timestamptz not null default now()`
+- `created_at text not null`
+- `updated_at text not null`
 - check exactly one of `professional_id` or `facility_id` is present
 
-`review_status`: `pending`, `published`, `hidden`, `removed`
+Review statuses: `pending`, `published`, `hidden`, `removed`.
 
-The public review query must expose `anonymous_name` only when `anonymous = true`, and must never expose the author email.
+### `review_scores`
 
-#### `review_scores`
-
-- `id uuid primary key`
-- `review_id uuid not null references reviews(id) on delete cascade`
+- `id text primary key`
+- `review_id text not null references reviews(id) on delete cascade`
 - `score_key text not null`
-- `score_value smallint not null check (score_value between 1 and 5)`
+- `score_value integer not null check (score_value between 1 and 5)`
 - unique `(review_id, score_key)`
 
-Professional score keys:
+Professional score keys: `listening`, `respect`, `clear_communication`, `non_alarmist`, `avoids_reassurance_seeking`, `respects_limits`, `rational_tests`, `uncertainty_support`, `understands_health_anxiety`.
 
-- `listening`
-- `respect`
-- `clear_communication`
-- `non_alarmist`
-- `avoids_reassurance_seeking`
-- `respects_limits`
-- `rational_tests`
-- `uncertainty_support`
-- `understands_health_anxiety`
+Facility score keys: `staff_respect`, `communication_preferences`, `no_unrequested_findings`, `avoids_speculation`, `low_anxiety_procedure`, `organization`, `overall_experience`.
 
-Facility score keys:
+### `facility_review_answers`
 
-- `staff_respect`
-- `communication_preferences`
-- `no_unrequested_findings`
-- `avoids_speculation`
-- `low_anxiety_procedure`
-- `organization`
-- `overall_experience`
+- `review_id text primary key references reviews(id) on delete cascade`
+- `commented_findings_frequency text`
+- `preference_requested integer`
+- `preference_respected integer`
 
-#### `facility_review_answers`
+Finding frequency values: `never`, `almost_never`, `sometimes`, `frequently`, `always`.
 
-- `review_id uuid primary key references reviews(id) on delete cascade`
-- `commented_findings_frequency finding_frequency`
-- `preference_requested boolean`
-- `preference_respected boolean`
+### `review_helpful_votes`
 
-`finding_frequency`: `never`, `almost_never`, `sometimes`, `frequently`, `always`
-
-### Review Feedback and Reports
-
-#### `review_helpful_votes`
-
-- `review_id uuid references reviews(id) on delete cascade`
-- `user_id uuid references profiles(id) on delete cascade`
-- `created_at timestamptz not null default now()`
+- `review_id text references reviews(id) on delete cascade`
+- `user_id text references users(id) on delete cascade`
+- `created_at text not null`
 - primary key `(review_id, user_id)`
 
-#### `reports`
+### `reports`
 
-- `id uuid primary key`
-- `reporter_id uuid not null references profiles(id)`
-- `review_id uuid references reviews(id) on delete cascade`
-- `professional_id uuid references professionals(id) on delete cascade`
-- `facility_id uuid references facilities(id) on delete cascade`
-- `reason report_reason not null`
+- `id text primary key`
+- `reporter_id text not null references users(id)`
+- `review_id text references reviews(id) on delete cascade`
+- `professional_id text references professionals(id) on delete cascade`
+- `facility_id text references facilities(id) on delete cascade`
+- `reason text not null`
 - `details text`
-- `status report_status not null default 'open'`
-- `handled_by uuid references profiles(id)`
-- `handled_at timestamptz`
-- `created_at timestamptz not null default now()`
+- `status text not null default 'open'`
+- `handled_by text references users(id)`
+- `handled_at text`
+- `created_at text not null`
 - check exactly one reported target is present
 
-`report_reason`: `personal_data`, `harassment`, `spam`, `false_information`, `dangerous_medical_content`, `fabricated_experience`, `conflict_of_interest`, `reassurance_seeking`, `diagnosis_seeking`, `rating_manipulation`, `other`
+Report statuses: `open`, `reviewing`, `resolved`, `dismissed`.
 
-`report_status`: `open`, `reviewing`, `resolved`, `dismissed`
+### `profile_suggestions`
 
-### Suggestions and Corrections
+- `id text primary key`
+- `submitted_by text not null references users(id)`
+- `target_type text not null`
+- `professional_id text references professionals(id)`
+- `facility_id text references facilities(id)`
+- `payload_json text not null`
+- `status text not null default 'pending'`
+- `reviewed_by text references users(id)`
+- `reviewed_at text`
+- `created_at text not null`
 
-#### `profile_suggestions`
+The JSON payload should be validated before insert. It keeps proposal forms flexible without weakening the canonical professional and facility tables.
 
-- `id uuid primary key`
-- `submitted_by uuid not null references profiles(id)`
-- `target_type suggestion_target_type not null`
-- `professional_id uuid references professionals(id)`
-- `facility_id uuid references facilities(id)`
-- `payload jsonb not null`
-- `status suggestion_status not null default 'pending'`
-- `reviewed_by uuid references profiles(id)`
-- `reviewed_at timestamptz`
-- `created_at timestamptz not null default now()`
+### `profile_claims`
 
-`suggestion_target_type`: `new_professional`, `new_facility`, `professional_correction`, `facility_correction`
-
-`suggestion_status`: `pending`, `published`, `verified`, `rejected`, `needs_more_info`
-
-`payload` should be validated at the application boundary and can store form-specific proposal data without prematurely adding many sparse columns.
-
-### Claims and Replies
-
-#### `profile_claims`
-
-- `id uuid primary key`
-- `claimant_id uuid not null references profiles(id)`
-- `professional_id uuid references professionals(id)`
-- `facility_id uuid references facilities(id)`
-- `status claim_status not null default 'pending'`
+- `id text primary key`
+- `claimant_id text not null references users(id)`
+- `professional_id text references professionals(id)`
+- `facility_id text references facilities(id)`
+- `status text not null default 'pending'`
 - `evidence_url text`
 - `notes text`
-- `reviewed_by uuid references profiles(id)`
-- `reviewed_at timestamptz`
-- `created_at timestamptz not null default now()`
+- `reviewed_by text references users(id)`
+- `reviewed_at text`
+- `created_at text not null`
 - check exactly one claim target is present
 
-#### `professional_replies`
+### `professional_replies`
 
-- `id uuid primary key`
-- `review_id uuid not null references reviews(id) on delete cascade`
-- `author_id uuid not null references profiles(id)`
+- `id text primary key`
+- `review_id text not null references reviews(id) on delete cascade`
+- `author_id text not null references users(id)`
 - `body text not null`
-- `status reply_status not null default 'pending'`
-- `created_at timestamptz not null default now()`
-- `updated_at timestamptz not null default now()`
+- `status text not null default 'pending'`
+- `created_at text not null`
+- `updated_at text not null`
 
-`reply_status`: `pending`, `published`, `hidden`, `removed`
+### `favorites`
 
-### Favorites
-
-#### `favorites`
-
-- `user_id uuid references profiles(id) on delete cascade`
-- `professional_id uuid references professionals(id) on delete cascade`
-- `facility_id uuid references facilities(id) on delete cascade`
-- `created_at timestamptz not null default now()`
-- primary key should include `user_id` plus the present target
+- `user_id text references users(id) on delete cascade`
+- `professional_id text references professionals(id) on delete cascade`
+- `facility_id text references facilities(id) on delete cascade`
+- `created_at text not null`
 - check exactly one favorite target is present
 
-### Aggregates
+Use unique partial indexes to prevent duplicate favorites per target type.
 
-#### `profile_rating_summaries`
+### `profile_rating_summaries`
 
-- `id uuid primary key`
-- `professional_id uuid references professionals(id) on delete cascade`
-- `facility_id uuid references facilities(id) on delete cascade`
+- `id text primary key`
+- `professional_id text references professionals(id) on delete cascade`
+- `facility_id text references facilities(id) on delete cascade`
 - `published_review_count integer not null default 0`
-- `overall_average numeric(3,2)`
-- `anxiety_compatibility_average numeric(3,2)`
-- `confidence_score numeric(5,4) not null default 0`
-- `score_breakdown jsonb not null default '{}'`
-- `updated_at timestamptz not null default now()`
+- `overall_average real`
+- `anxiety_compatibility_average real`
+- `confidence_score real not null default 0`
+- `score_breakdown_json text not null default '{}'`
+- `updated_at text not null`
 - check exactly one target is present
 
-This table is maintained server-side only. Clients must not directly write aggregate scores.
+This table is maintained only by trusted server code after review status changes. Browser code must never write aggregate scores.
 
-## 5. Entity Relationships
+## 7. Entity Relationships
 
-- A `profile` maps one-to-one to a Supabase Auth user.
+- A `user` can author many reviews, reports, suggestions, helpful votes, and favorites.
 - A `professional` has one primary specialty and zero or more secondary specialties.
 - A `facility` has zero or more supported study types.
 - A `review` belongs to one user and exactly one target: professional or facility.
@@ -382,67 +411,59 @@ This table is maintained server-side only. Clients must not directly write aggre
 - A `favorite` belongs to one user and exactly one target.
 - A `profile_rating_summary` belongs to exactly one professional or facility.
 
-## 6. Supabase RLS Strategy
+## 8. Authorization Strategy
 
-RLS should be enabled on every public schema table.
+SQLite does not provide row-level security for this use case, so authorization must be enforced in server route handlers and domain services.
 
-### Helper Functions
+### Session Handling
 
-Create stable SQL functions:
+- Passwords are hashed with a dedicated password hashing function such as `scrypt`, `bcrypt`, or `argon2`.
+- Session tokens are random, long, and stored hashed in `sessions`.
+- Cookies are `HttpOnly`, `Secure` in production, and `SameSite=Lax`.
+- Logout deletes the server session row and clears the cookie.
+- Suspended and banned users cannot create new content.
 
-- `auth.uid()` for current user identity.
-- `public.current_user_role()` returns the current user's role from `profiles`.
-- `public.is_admin()` returns true for `admin` or `moderator`.
-- `public.owns_professional(professional_id uuid)` checks approved claim ownership.
-- `public.owns_facility(facility_id uuid)` checks approved claim ownership.
+### Public Access
 
-### Public Read Policies
+- Anyone can read non-suspended professionals and facilities.
+- Anyone can read published reviews.
+- Public review view helpers must hide author identity when `anonymous = 1`.
+- Public pages must never render user email addresses.
 
-- Published professionals and facilities are readable by everyone unless suspended.
-- Published reviews are readable by everyone.
-- Public review reads should go through a view such as `public_reviews` that hides author identity when anonymous.
-- Taxonomy tables and locations are publicly readable.
-- Rating summaries are publicly readable.
+### Authenticated Users
 
-### Authenticated User Policies
-
-- Users can read and update their own `profiles` row except protected fields: `role`, `status`, `reputation_score`.
-- Users can create reviews as themselves only.
-- Users can update their own reviews while status is `pending` or `published`; edits may reset status to `pending`.
-- Users can request deletion or set their own review to a user-hidden state, subject to moderation requirements.
-- Users can create reports as themselves.
-- Users can create profile suggestions as themselves.
+- Users can update only their own display name and anonymous name.
+- Users can create reviews only as themselves.
+- Users can edit their own reviews; edits to published reviews should reset status to `pending`.
+- Users can remove their own review from public display, but moderation/audit data remains.
+- Users can report content as themselves.
 - Users can manage their own favorites.
-- Users can create helpful votes once per review and cannot vote on their own review.
+- Users can mark a review useful once and cannot mark their own review useful.
 
-### Professional and Facility Owner Policies
+### Claimed Professionals and Facilities
 
-- Approved claimants can propose corrections through `profile_suggestions`.
-- Approved claimants can create replies to reviews for claimed targets.
-- Replies should default to `pending` unless admin policy later allows trusted immediate publishing.
-- Claimants cannot delete or hide patient reviews.
+- Approved claimants can submit correction suggestions.
+- Approved claimants can submit replies to reviews on claimed profiles.
+- Replies default to `pending`.
+- Claimants cannot delete, hide, or directly modify patient reviews.
 - Claimants cannot mark themselves verified.
 
-### Admin Policies
+### Admins and Moderators
 
 Admins and moderators can:
 
-- Read all rows needed for moderation.
+- Read moderation queues.
 - Update verification status.
 - Approve or reject suggestions and claims.
 - Change review, reply, report, and user statuses.
 - Update taxonomy data.
-- Trigger aggregate recalculation through trusted server paths.
+- Recalculate rating summaries.
 
-### Aggregate Protection
+Every admin mutation should check `user.role in ('admin', 'moderator')` on the server.
 
-- No client role can insert, update, or delete `profile_rating_summaries`.
-- Aggregates are updated by database triggers, Edge Functions, or server-only code using service-role credentials.
-- Service-role credentials must never be exposed to browser bundles.
+## 9. Search and Ranking
 
-## 7. Search and Ranking
-
-Initial search can use PostgreSQL full-text search plus filters:
+Initial search can use SQLite queries over:
 
 - professional/facility name
 - specialty
@@ -453,7 +474,9 @@ Initial search can use PostgreSQL full-text search plus filters:
 - published review count
 - compatibility score
 
-Ranking should not sort purely by stars. The initial ranking score should combine:
+Use SQLite FTS5 if available. If not, start with indexed `LIKE` queries and keep the search module isolated.
+
+Ranking must not sort purely by stars. The initial ranking score should combine:
 
 - text relevance
 - target type match
@@ -465,27 +488,26 @@ Ranking should not sort purely by stars. The initial ranking score should combin
 
 Low sample sizes should display clear copy such as "Pocas experiencias publicadas" and should not be treated as reliable top rankings.
 
-## 8. Validation and Moderation
+## 10. Validation and Moderation
 
 All user-generated content must be validated before insert:
 
 - length limits for comments, reports, suggestions, and replies
 - required structured scores
-- no diagnosis, medical history, study results, DNI, date of birth, home address, or third-party identifying information requested in forms
+- no requested diagnosis, medical history, study results, DNI, date of birth, home address, or third-party identifying information
 - comments default to `pending` if moderation tooling is active
 
 MVP moderation can be admin-reviewed without automated classification. The schema must still preserve explicit status and report records.
 
-## 9. Implementation Phases
+## 11. Implementation Phases
 
 ### Phase 1 - Foundation
 
-- Create Next.js App Router project with TypeScript and Tailwind.
-- Configure Supabase clients for browser and server.
-- Add environment variable contract.
-- Add authentication pages.
-- Add profile creation trigger for new auth users.
-- Create initial migrations for taxonomy, profiles, professionals, facilities, reviews, reports, and RLS.
+- Create Node server and static asset pipeline.
+- Add SQLite connection and migration runner.
+- Add base schema migration and seed data.
+- Add session authentication.
+- Add base layout, CSS, and public home page.
 
 ### Phase 2 - Public Browsing
 
@@ -528,23 +550,18 @@ MVP moderation can be admin-reviewed without automated classification. The schem
 - Add static educational pages under `/guias` and `/como-funciona`.
 - Keep copy aligned with the no-reassurance product rule.
 
-## 10. Migration Plan
+## 12. Migration Plan
 
-1. Create database enums.
-2. Create taxonomy and location tables.
-3. Create `profiles` and auth user trigger.
+1. Add migration runner.
+2. Create core auth tables: `users`, `sessions`.
+3. Create taxonomy and location tables.
 4. Create professional and facility profile tables.
 5. Create reviews, structured scores, and facility-specific answers.
-6. Create reporting, helpful votes, favorites, suggestions, claims, replies.
+6. Create reporting, helpful votes, favorites, suggestions, claims, and replies.
 7. Create aggregate summary table.
-8. Create public-safe views for reviews and profile summaries.
-9. Enable RLS on all tables.
-10. Add read policies for public content.
-11. Add owner policies for users.
-12. Add claimant policies for replies and correction requests.
-13. Add admin policies.
-14. Seed specialties, study types, and initial locations for CABA and Gran Buenos Aires.
-15. Add indexes for search, slugs, foreign keys, status fields, and common filters.
+8. Add indexes for slugs, foreign keys, status fields, and common filters.
+9. Seed specialties, study types, and initial locations for CABA and Gran Buenos Aires.
+10. Seed a small set of sample professionals and facilities for local development.
 
 Recommended indexes:
 
@@ -557,20 +574,20 @@ Recommended indexes:
 - `reviews(facility_id, status)`
 - `reports(status)`
 - `profile_suggestions(status)`
-- full-text indexes over professional display name, specialty names, facility names, and study types
+- `sessions(token_hash)`
 
-## 11. Product Ambiguities Affecting Architecture
+## 13. Product Ambiguities Affecting Architecture
 
-- Whether reviews should publish immediately or always enter moderation. The schema supports both, but MVP policy should decide default status.
+- Whether reviews should publish immediately or always enter moderation. Recommended for MVP: default to `pending`.
 - Whether negative reviews can be edited after publication without re-moderation. Recommended: edits reset to `pending`.
-- Whether professionals can reply immediately after claim approval. Recommended: replies start as `pending` for MVP.
-- Whether users can delete published reviews or only request removal. Recommended: allow user removal from public display while preserving audit data.
+- Whether professionals can reply immediately after claim approval. Recommended: replies start as `pending`.
+- Whether users can delete published reviews or only remove them from public display. Recommended: remove from public display while preserving audit data.
 - How to verify professional/facility identity in Argentina. The schema supports evidence URLs and admin notes, but operational policy is needed.
 - Whether "quality/information" score is manually curated, computed from verification completeness, or both.
-- Whether guide content is static markdown, CMS-backed, or database-backed. Static pages are enough for MVP.
+- Whether guide content should be static HTML or database-backed. Static HTML is enough for MVP.
 - Whether search needs geospatial distance in MVP. Plain location filters are likely enough for CABA/GBA; latitude/longitude leaves room for distance later.
 - How strict content moderation should be around medical claims in comments. MVP should reject or hide explicit diagnoses, study results, and dangerous advice.
 
-## 12. Initial Build Recommendation
+## 14. Initial Build Recommendation
 
-Start with the data model and RLS, then implement read-only public browsing against seeded data before adding review writes. This reduces the risk of building UI flows that later conflict with authorization, moderation, or anonymity requirements.
+Start with a server-rendered vanilla app, SQLite migrations, seed data, and read-only public browsing. Add authenticated review writes only after authorization, session handling, and moderation states are in place.

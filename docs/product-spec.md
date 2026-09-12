@@ -391,13 +391,11 @@ El MVP debe concentrarse en:
 
 ## 19. Stack tecnológico inicial
 
-- Frontend: Next.js
-- Lenguaje: TypeScript
-- Router: App Router
-- Estilos: Tailwind CSS
-- Backend / Base de datos: Supabase / PostgreSQL
-- Autenticación: Supabase Auth
-- Hosting: Vercel
+- Frontend: HTML, CSS y JavaScript vanilla
+- Backend: Node.js mínimo
+- Base de datos: SQLite
+- Autenticación: sesiones gestionadas por el servidor
+- Hosting: proveedor compatible con Node.js y almacenamiento persistente, o VPS simple
 - Repositorio: GitHub
 
 ## 20. Modelo inicial de datos

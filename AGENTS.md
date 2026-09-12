@@ -14,15 +14,15 @@ These files define the intended product behavior and UX.
 
 ## Required stack
 
-- Next.js
-- TypeScript
-- App Router
-- Tailwind CSS
-- Supabase
-- PostgreSQL
-- Supabase Auth
-- Vercel
+- Plain HTML
+- CSS
+- Vanilla JavaScript
+- Node.js
+- SQLite
+- Server-managed sessions
 - GitHub
+
+Avoid frontend frameworks unless the user explicitly changes direction again.
 
 ## Core product rules
 
@@ -76,10 +76,10 @@ Before implementing major features:
 1. Inspect the existing project.
 2. Preserve established patterns unless there is a strong reason to change them.
 3. Prefer small, reviewable changes.
-4. Keep TypeScript strict.
+4. Keep JavaScript small, modular, and progressively enhanced.
 5. Use server-side authorization where appropriate.
-6. Use Supabase Row Level Security for user-owned data.
-7. Never expose service-role credentials to the client.
+6. Enforce user ownership and admin permissions in server-side route handlers.
+7. Never expose secrets, session signing keys, or database files to the client.
 8. Keep secrets in environment variables and never commit them.
 9. Add validation for all user-generated content.
 10. Treat moderation state as explicit data, not only UI state.
@@ -117,7 +117,7 @@ Leave room for a confidence-weighted ranking later.
 
 ## Security
 
-Use Supabase RLS so that:
+Use server-side authorization so that:
 - users can update only their own profile data
 - users can create reviews as themselves
 - public review display can hide author identity when `anonymous = true`
@@ -156,7 +156,7 @@ Before building UI, produce:
 1. proposed project structure
 2. database schema
 3. entity relationships
-4. Supabase RLS strategy
+4. server-side authorization strategy
 5. implementation phases
 6. migration plan
 7. any product ambiguities that materially affect architecture
