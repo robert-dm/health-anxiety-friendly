@@ -1,0 +1,18 @@
+[
+  {
+    "name": "CEAN - Centro de Ansiedad y Trastornos Relacionados",
+    "type": "clinic",
+    "website": "https://ceanweb.org/",
+    "evidence_level": "explicit_health_anxiety",
+    "evidence_summary": "Hay evidencia publica explicita de atencion de health anxiety y trastornos relacionados.",
+    "verified_at": "2026-09-13"
+  },
+  {
+    "name": "CITA - Centro Interdisciplinario de Tourette, TOC, TDAH y Trastornos Asociados",
+    "type": "clinic",
+    "website": "https://www.citaargentina.com/",
+    "evidence_level": "ocd_related",
+    "evidence_summary": "El centro declara atencion interdisciplinaria de TOC y trastornos relacionados.",
+    "verified_at": "2026-09-13"
+  }
+]
