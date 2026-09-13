@@ -1,3 +1,4 @@
+import { importExpandedDirectory } from './db/import-expanded-directory.js';
 import { route } from './app.js';
 import { withDatabase } from './db/connection.js';
 import { d1Database } from './db/d1.js';
@@ -39,7 +40,7 @@ export default {
       // The URL's actual origin is authoritative; forwarded host headers are ignored.
       bridge.headers.host = url.host;
       const output = { status:200, headers:{}, body:'', writeHead(status,headers={}) {this.status=status;this.headers=headers;}, end(body='') {this.body=body;} };
-      await withDatabase(d1Database(env.DB), () => route(bridge,output));
+      await withDatabase(d1Database(env.DB), async () => { await importExpandedDirectory(); await route(bridge,output); });
       if (output.headers['set-cookie']) {
         const cookie = output.headers['set-cookie'];
         if (!cookie.includes('; Secure')) output.headers['set-cookie'] = cookie + '; Secure';

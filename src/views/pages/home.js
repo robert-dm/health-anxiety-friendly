@@ -13,7 +13,7 @@ export function homePage({ featured }) {
     <nav class="category-links" aria-label="Tipos de atención">
       <a href="/buscar?categoria=mental_health">Psicología y psiquiatría</a>
       <a href="/buscar?categoria=medical">Especialidades médicas</a>
-      <a href="/buscar?tipo=centros">Centros de estudios</a>
+      <a href="/buscar?tipo=centros">Centros de salud y estudios</a>
     </nav>
   </section>
   <section class="directory-body">

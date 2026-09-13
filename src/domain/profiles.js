@@ -1,3 +1,4 @@
+import { getEvidence } from './evidence.js';
 import { getRatingSummary } from "./ratings.js";
 import { getDb } from "../db/connection.js";
 
@@ -29,6 +30,7 @@ export async function getProfessionalBySlug(slug) {
   if (!professional) return null;
   Object.assign(professional, await getRatingSummary({ professionalId: professional.id }));
   professional.reviews = await getReviews({ professionalId: professional.id });
+  professional.evidence = await getEvidence({professionalId:professional.id});
   return professional;
 }
 
@@ -69,6 +71,8 @@ export async function getFacilityBySlug(slug) {
     )
     .all(facility.id));
   facility.reviews = await getReviews({ facilityId: facility.id });
+  facility.evidence = await getEvidence({facilityId:facility.id});
+  facility.specialties = await db.prepare('select s.name from facility_specialties fs join specialties s on s.id=fs.specialty_id where fs.facility_id=?').all(facility.id);
   return facility;
 }
 

@@ -8,6 +8,20 @@
       "when": 1789304315745,
       "tag": "0000_salty_giant_man",
       "breakpoints": true
+    },
+    {
+      "idx": 1,
+      "version": "6",
+      "when": 1789322400000,
+      "tag": "0001_curated_directory",
+      "breakpoints": true
+    },
+    {
+      "idx": 2,
+      "version": "6",
+      "when": 1789328921934,
+      "tag": "0002_square_lord_tyger",
+      "breakpoints": true
     }
   ]
 }

@@ -1,3 +1,4 @@
+import { importExpandedDirectory } from './db/import-expanded-directory.js';
 import fs from "node:fs";
 import http from "node:http";
 import path from "node:path";
@@ -45,6 +46,7 @@ function serveStatic(request, response) {
 if (process.argv[1] === fileURLToPath(import.meta.url)) {
   migrate();
   setDefaultDatabase(getNodeDb());
+  await importExpandedDirectory();
   const server = http.createServer(async (request, response) => {
     try {
       if (!serveStatic(request, response)) await route(request, response);

@@ -1,11 +1,12 @@
+import { evidencePills } from './evidence.js';
 import { escapeHtml, formatRating, locationLabel } from "../html.js";
 import { minimumReviews } from "../../domain/ratings.js";
 export function statusPill(status, isDemo = false) {
   if (isDemo) return `<span class="pill">Perfil de ejemplo</span>`;
-  if (status === "verified") return `<span class="pill verified">Información básica verificada</span>`;
+  if (status === "verified") return `<span class="pill verified">Datos básicos comprobados</span>`;
   if (status === "claimed") return `<span class="pill">Perfil reclamado</span>`;
   if (status === "community") return `<span class="pill community">Agregado por la comunidad</span>`;
-  return `<span class="pill">Información incompleta</span>`;
+  return `<span class="pill">Datos básicos por completar</span>`;
 }
 export function categoryLabel(value) { return ({diagnostic_center:'Centro de diagnóstico',clinic:'Clínica',lab:'Laboratorio',hospital:'Hospital',other:'Centro de salud'})[value] || value || 'Especialidad no informada'; }
 export function ratingSummary(item) {
@@ -17,5 +18,5 @@ export function ratingSummary(item) {
 }
 export function targetCard(item) {
   const path = item.type === 'professional' ? `/profesionales/${encodeURIComponent(item.slug)}` : `/centros/${encodeURIComponent(item.slug)}`;
-  return `<article class="card result-card"><div><div class="meta"><span class="pill">${item.type === 'professional' ? 'Profesional' : 'Centro de estudios'}</span>${statusPill(item.verification_status, item.is_demo)}</div><h3><a href="${path}">${escapeHtml(item.name)}</a></h3><p>${escapeHtml(categoryLabel(item.category))} · ${escapeHtml(locationLabel(item))}</p>${ratingSummary(item)}</div><a class="button secondary" href="${path}" aria-label="Ver perfil de ${escapeHtml(item.name)}">Ver perfil ↗</a></article>`;
+  return `<article class="card result-card"><div><div class="meta"><span class="pill">${item.type === 'professional' ? 'Profesional' : escapeHtml(categoryLabel(item.category))}</span>${statusPill(item.verification_status, item.is_demo)}</div><h3><a href="${path}">${escapeHtml(item.name)}</a></h3><p>${escapeHtml(categoryLabel(item.specialty_names || item.category))} · ${escapeHtml(locationLabel(item))}</p>${evidencePills(item)}${ratingSummary(item)}</div><a class="button secondary" href="${path}" aria-label="Ver perfil de ${escapeHtml(item.name)}">Ver perfil ↗</a></article>`;
 }

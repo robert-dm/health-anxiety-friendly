@@ -1,0 +1,263 @@
+{
+  "version": "expanded-directory-2026-09-13-v1",
+  "reviewedAt": "2026-09-13",
+  "specialties": [
+    [
+      "odontologia",
+      "Odontología",
+      "medical"
+    ],
+    [
+      "diagnostico-por-imagenes",
+      "Diagnóstico por imágenes",
+      "medical"
+    ]
+  ],
+  "records": [
+    {
+      "id": "patricia-garcia",
+      "type": "professional",
+      "slug": "patricia-garcia",
+      "name": "Dra. Patricia García",
+      "specialty": "odontologia",
+      "city": "CABA",
+      "neighborhood": "Palermo",
+      "address": "Güemes 4070, PB C, CABA",
+      "website": "https://www.drapatriciagarcia.com/",
+      "phone": "+54 11 3934-4376",
+      "description": "Odontóloga. Publica atención dirigida a personas con miedo o ansiedad dental.",
+      "facilityType": "clinic",
+      "studies": []
+    },
+    {
+      "id": "odontoinclusiva",
+      "type": "facility",
+      "slug": "odontoinclusiva",
+      "name": "OdontoInclusiva",
+      "specialty": "odontologia",
+      "city": "CABA",
+      "neighborhood": "Palermo",
+      "address": "Palermo, CABA. Dirección exacta a confirmar.",
+      "website": "https://odontoinclusiva.ar/",
+      "phone": "+54 11 7364-2732",
+      "description": "Atención odontológica adaptada para personas con ansiedad, miedo al tratamiento y otras necesidades de apoyo.",
+      "facilityType": "clinic",
+      "studies": []
+    },
+    {
+      "id": "imaxe-caba",
+      "type": "facility",
+      "slug": "imaxe-caba",
+      "name": "IMAXE · CABA",
+      "specialty": "diagnostico-por-imagenes",
+      "city": "CABA",
+      "neighborhood": null,
+      "address": "Av. Córdoba 2330 / 2340 / 2370, CABA. Confirmar edificio al reservar.",
+      "website": "https://www.imaxe.com.ar/resonancia",
+      "phone": "+54 11 5257-7954",
+      "description": "Servicio de resonancia magnética con opción de equipo abierto en esta sede.",
+      "facilityType": "diagnostic_center",
+      "studies": [
+        "resonancia-magnetica"
+      ]
+    },
+    {
+      "id": "imaxe-berazategui",
+      "type": "facility",
+      "slug": "imaxe-berazategui",
+      "name": "IMAXE · Berazategui",
+      "specialty": "diagnostico-por-imagenes",
+      "city": "Berazategui",
+      "neighborhood": null,
+      "address": "Av. 14 Nº 5889, Berazategui",
+      "website": "https://www.imaxe.com.ar/resonancia",
+      "phone": "+54 11 5257-7954",
+      "description": "Servicio de resonancia magnética con opción de equipo abierto en esta sede.",
+      "facilityType": "diagnostic_center",
+      "studies": [
+        "resonancia-magnetica"
+      ]
+    },
+    {
+      "id": "idim-belgrano-resonancia",
+      "type": "facility",
+      "slug": "idim-belgrano-resonancia",
+      "name": "IDIM Belgrano · Resonancia",
+      "specialty": "diagnostico-por-imagenes",
+      "city": "CABA",
+      "neighborhood": "Belgrano",
+      "address": "Amenábar 1945, CABA",
+      "website": "https://www.idim.com.ar/index.php/content/44:resonancia-magnetica",
+      "phone": null,
+      "description": "Servicio de resonancia magnética de la sede Belgrano.",
+      "facilityType": "diagnostic_center",
+      "studies": [
+        "resonancia-magnetica"
+      ]
+    },
+    {
+      "id": "cardiopeco",
+      "type": "facility",
+      "slug": "cardiopeco",
+      "name": "Cardiopeco",
+      "specialty": "cardiologia",
+      "city": "CABA",
+      "neighborhood": null,
+      "address": "Av. Monroe 2341, 8º C, CABA",
+      "website": "https://cardiopeco.com/",
+      "phone": "+54 11 4407-9344",
+      "description": "Consultas y estudios cardiológicos. Publica un compromiso de comunicación en lenguaje sencillo.",
+      "facilityType": "clinic",
+      "studies": []
+    }
+  ],
+  "evidence": [
+    {
+      "target": "patricia-garcia",
+      "type": "professional",
+      "kind": "dental_anxiety",
+      "scope": "Consulta odontológica",
+      "summary": "Declara explicar cada paso y adaptar la atención a los tiempos y sensaciones del paciente. No se encontró una declaración específica sobre TOC de salud.",
+      "url": "https://www.drapatriciagarcia.com/",
+      "title": "Dra. Patricia García",
+      "extraSources": []
+    },
+    {
+      "target": "odontoinclusiva",
+      "type": "facility",
+      "kind": "dental_anxiety",
+      "scope": "Atención odontológica",
+      "summary": "El centro declara adaptar cada encuentro y atender a personas con trastornos de ansiedad o fobia. Publica atención en consultorio y opciones en quirófano según evaluación; no declara experiencia específica en TOC de salud.",
+      "url": "https://odontoinclusiva.ar/",
+      "title": "OdontoInclusiva",
+      "extraSources": []
+    },
+    {
+      "target": "imaxe-caba",
+      "type": "facility",
+      "kind": "claustrophobia",
+      "scope": "Resonancia magnética en esta sede",
+      "summary": "La institución publica equipos abiertos para personas con ansiedad o claustrofobia y solicita avisar al personal. Confirmar si el equipo es adecuado para el estudio indicado. Esto no acredita manejo de TOC de salud.",
+      "url": "https://www.imaxe.com.ar/resonancia",
+      "title": "IMAXE · CABA",
+      "extraSources": [
+        {
+          "url": "https://www.imaxe.com.ar/contacto",
+          "title": "Sedes y contacto de IMAXE"
+        }
+      ]
+    },
+    {
+      "target": "imaxe-berazategui",
+      "type": "facility",
+      "kind": "claustrophobia",
+      "scope": "Resonancia magnética en esta sede",
+      "summary": "La institución publica equipos abiertos para personas con ansiedad o claustrofobia y solicita avisar al personal. Confirmar si el equipo es adecuado para el estudio indicado. Esto no acredita manejo de TOC de salud.",
+      "url": "https://www.imaxe.com.ar/resonancia",
+      "title": "IMAXE · Berazategui",
+      "extraSources": [
+        {
+          "url": "https://www.imaxe.com.ar/contacto",
+          "title": "Sedes y contacto de IMAXE"
+        }
+      ]
+    },
+    {
+      "target": "idim-belgrano-resonancia",
+      "type": "facility",
+      "kind": "claustrophobia",
+      "scope": "Resonancia magnética · sede Belgrano",
+      "summary": "Publica un resonador abierto destinado a personas con claustrofobia. La característica corresponde a este servicio; no implica adaptaciones en todos los estudios ni experiencia específica en TOC.",
+      "url": "https://www.idim.com.ar/index.php/content/44:resonancia-magnetica",
+      "title": "IDIM Belgrano · Resonancia",
+      "extraSources": [
+        {
+          "url": "https://www.idim.com.ar/index.php/sedes-y-horarios/idim-belgrano",
+          "title": "Dirección de IDIM Belgrano"
+        }
+      ]
+    },
+    {
+      "target": "cardiopeco",
+      "type": "facility",
+      "kind": "communication",
+      "scope": "Comunicación durante la consulta cardiológica",
+      "summary": "Declara dedicar tiempo y explicar diagnósticos y tratamientos en términos simples. Es una declaración general del centro: no demuestra formación en TOC ni atención adaptada a ansiedad por la salud.",
+      "url": "https://cardiopeco.com/",
+      "title": "Cardiopeco",
+      "extraSources": []
+    },
+    {
+      "target": "pro-camila-steigmeier",
+      "type": "professional",
+      "kind": "ocd",
+      "scope": "Formación o práctica declarada en TOC",
+      "summary": "Declara formación específica en TOC y entrenamiento BTTI.",
+      "url": "https://tocargentina.com.ar/equipo.html",
+      "title": "Equipo de TOC Argentina"
+    },
+    {
+      "target": "pro-agnese-parisi",
+      "type": "professional",
+      "kind": "ocd",
+      "scope": "Formación o práctica declarada en TOC",
+      "summary": "Declara formación en TOC, TCC y trastornos de ansiedad.",
+      "url": "https://tocargentina.com.ar/equipo.html",
+      "title": "Equipo de TOC Argentina"
+    },
+    {
+      "target": "pro-florencia-portero",
+      "type": "professional",
+      "kind": "ocd",
+      "scope": "Formación o práctica declarada en TOC",
+      "summary": "Declara diplomatura en TOC y espectro.",
+      "url": "https://tocargentina.com.ar/equipo.html",
+      "title": "Equipo de TOC Argentina"
+    },
+    {
+      "target": "pro-carola-wainhaus",
+      "type": "professional",
+      "kind": "ocd",
+      "scope": "Formación o práctica declarada en TOC",
+      "summary": "Psiquiatra del equipo de TOC Argentina con formación en ansiedad. La evidencia corresponde a su pertenencia al equipo.",
+      "url": "https://tocargentina.com.ar/equipo.html",
+      "title": "Equipo de TOC Argentina"
+    },
+    {
+      "target": "pro-leonel-galeppi",
+      "type": "professional",
+      "kind": "ocd",
+      "scope": "Formación o práctica declarada en TOC",
+      "summary": "Declara entrenamiento clínico en TOC.",
+      "url": "https://tocargentina.com.ar/equipo.html",
+      "title": "Equipo de TOC Argentina"
+    },
+    {
+      "target": "pro-romina-raffo",
+      "type": "professional",
+      "kind": "ocd",
+      "scope": "Formación o práctica declarada en TOC",
+      "summary": "Declara formación y actividad docente sobre TOC y espectro.",
+      "url": "https://tocargentina.com.ar/equipo.html",
+      "title": "Equipo de TOC Argentina"
+    },
+    {
+      "target": "pro-ricardo-perez-rivera",
+      "type": "professional",
+      "kind": "ocd",
+      "scope": "Psiquiatría · dirección de TOC Argentina",
+      "summary": "La institución lo presenta como médico psiquiatra y director de su equipo especializado.",
+      "url": "https://tocargentina.com.ar/DrPerezRivera.html",
+      "title": "Ricardo Pérez Rivera · TOC Argentina"
+    },
+    {
+      "target": "fac-toc-argentina",
+      "type": "facility",
+      "kind": "health_anxiety",
+      "scope": "Tratamientos del centro",
+      "summary": "La institución incluye hipocondría entre los problemas que aborda. La declaración es institucional y no confirma el trato de cada profesional.",
+      "url": "https://tocargentina.com.ar/",
+      "title": "TOC Argentina"
+    }
+  ]
+}

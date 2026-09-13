@@ -1,6 +1,6 @@
 import { createReport } from "./domain/reports.js";
 import { config } from "./config.js";
-import { getFeatured, searchTargets } from "./domain/search.js";
+import { getFeatured, searchTargets, getSpecialtyOptions } from "./domain/search.js";
 import { getFacilityBySlug, getProfessionalBySlug } from "./domain/profiles.js";
 import { authenticateUser, registerUser } from "./domain/users.js";
 import { createProfileSuggestion, getUserSuggestions } from "./domain/suggestions.js";
@@ -228,8 +228,8 @@ export async function route(request, response) {
   if (pathname === "/buscar") {
     const q = url.searchParams.get("q") || "";
     const where = url.searchParams.get("where") || "";
-    const filters = { q, where, tipo: url.searchParams.get("tipo") || "", categoria: url.searchParams.get("categoria") || "", modalidad: url.searchParams.get("modalidad") || "", verificado: url.searchParams.get("verificado") === "1" };
-    sendHtml(response, "Buscar", searchPage({ ...filters, results: await searchTargets(filters) }), 200, user);
+    const filters = { q, where, especialidad: url.searchParams.get("especialidad") || "", evidencia: url.searchParams.get("evidencia") || "", tipo: url.searchParams.get("tipo") || "", categoria: url.searchParams.get("categoria") || "", modalidad: url.searchParams.get("modalidad") || "", verificado: url.searchParams.get("verificado") === "1" };
+    sendHtml(response, "Buscar", searchPage({ ...filters, specialties: await getSpecialtyOptions(), results: await searchTargets(filters) }), 200, user);
     return;
   }
 

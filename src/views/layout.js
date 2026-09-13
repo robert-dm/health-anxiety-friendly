@@ -28,7 +28,7 @@ export function layout({ title, body, user = null }) {
         <div class="nav-links">
           <a href="/buscar">Buscar</a>
           <a href="/buscar?tipo=profesionales">Profesionales</a>
-          <a href="/buscar?tipo=centros">Centros de estudios</a>
+          <a href="/buscar?tipo=centros">Centros de salud y estudios</a>
           <a href="/guias">Guías</a>
           <a href="/agregar">Agregar</a>
           ${accountLinks}

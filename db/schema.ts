@@ -279,3 +279,31 @@ export const profile_rating_summaries = sqliteTable("profile_rating_summaries", 
 }, (table) => [
   check("profile_rating_summaries_check_0", sql`(professional_id is not null and facility_id is null) or (professional_id is null and facility_id is not null)`),
 ]);
+
+
+export const directory_imports = sqliteTable("directory_imports", {
+  id: text("id").primaryKey(),
+  applied_at: text("applied_at").notNull(),
+});
+
+export const facility_specialties = sqliteTable("facility_specialties", {
+  facility_id: text("facility_id").notNull().references(() => facilities.id, {onDelete: "cascade"}),
+  specialty_id: text("specialty_id").notNull().references(() => specialties.id, {onDelete: "restrict"}),
+}, table => [primaryKey({columns: [table.facility_id, table.specialty_id]})]);
+
+export const profile_evidence = sqliteTable("profile_evidence", {
+  id: text("id").primaryKey(),
+  professional_id: text("professional_id").references(() => professionals.id, {onDelete: "cascade"}),
+  facility_id: text("facility_id").references(() => facilities.id, {onDelete: "cascade"}),
+  kind: text("kind").notNull(),
+  scope: text("scope").notNull(),
+  summary: text("summary").notNull(),
+  source_url: text("source_url").notNull(),
+  source_title: text("source_title").notNull(),
+  reviewed_at: text("reviewed_at").notNull(),
+}, table => [
+  index("evidence_professional_idx").on(table.professional_id),
+  index("evidence_facility_idx").on(table.facility_id),
+  check("evidence_target", sql`(professional_id is not null and facility_id is null) or (professional_id is null and facility_id is not null)`),
+  check("evidence_kind", sql`kind in ('health_anxiety', 'ocd', 'dental_anxiety', 'claustrophobia', 'communication')`),
+]);

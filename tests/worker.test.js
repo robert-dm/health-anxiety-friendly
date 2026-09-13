@@ -17,7 +17,7 @@ async function send(path, method='GET', data={}, extra={}) {
   return worker.fetch(new Request('https://directory.test'+path,{method,headers:{origin:'https://directory.test',cookie:cookie || '',...extra},...(method==='POST'?{body:new URLSearchParams(data)}:{})}),env);
 }
 test('Worker serves the directory and registers a persistent session through async D1', async()=>{
-  const home=await send('/');assert.equal(home.status,200);assert.match(await home.text(),/El directorio empieza/);
+  const home=await send('/');assert.equal(home.status,200);assert.match(await home.text(),/La forma de atenderte/);
   const created=await send('/registro','POST',{email:'worker@example.test',password:'test-password-long',acceptedGuidelines:'yes'});
   assert.equal(created.status,303);assert.match(created.headers.get('set-cookie'),/Secure/);cookie=created.headers.get('set-cookie').split(';')[0];
   assert.equal((await send('/cuenta')).status,200);
@@ -29,7 +29,7 @@ test('Worker completes proposal moderation and review persistence with real cons
   assert.equal((await send('/admin/suggestions/status','POST',{id:suggestionId,status:'published'})).status,403);
   db.prepare("update users set role='admin' where email='worker@example.test'").run();
   assert.equal((await send('/admin/suggestions/status','POST',{id:suggestionId,status:'published'})).status,303);
-  profile=db.prepare('select * from professionals').get();assert.equal(profile.is_demo,0);assert.equal(profile.verification_status,'community');
+  profile=db.prepare("select * from professionals where display_name='Profesional para prueba'").get();assert.equal(profile.is_demo,0);assert.equal(profile.verification_status,'community');
   const q=await send('/buscar?q=cardiologo&where=Haedo');assert.equal(q.status,200);assert.match(await q.text(),/Profesional para prueba/);
   const scores=Object.fromEntries(['listening','respect','clear_communication','non_alarmist','avoids_reassurance_seeking','respects_limits','rational_tests','uncertainty_support','understands_health_anxiety'].map(key=>[key,'4']));
   assert.equal((await send('/review/profesional/'+profile.id,'POST',{...scores,overall_rating:'4',anonymous:'yes',comment:'Respetó mis preferencias de comunicación.'})).status,303);
@@ -42,6 +42,18 @@ test('Worker enforces origin and body limits and serves assets independently',as
   const big=await send('/registro','POST',{data:'x'.repeat(100001)});assert.equal(big.status,413);
   assert.equal(await (await send('/styles/main.css')).text(),'asset-ok');
   assert.equal((await send('/missing')).status,404);
+});
+test('catalog is persisted once, has scoped evidence and specialty filters include facilities',async()=>{
+  const n=db.prepare('select count(*) as n from professionals').get().n;
+  const dental=await send('/buscar?especialidad=odontologia&evidencia=dental_anxiety');
+  const html=await dental.text();assert.equal(dental.status,200);assert.match(html,/Patricia García/);assert.match(html,/OdontoInclusiva/);assert.doesNotMatch(html,/IMAXE ·/);
+  const cardio=await send('/buscar?especialidad=cardiologia&evidencia=communication');assert.match(await cardio.text(),/Cardiopeco/);
+  const rm=await send('/buscar?evidencia=claustrophobia&where=Berazategui');assert.match(await rm.text(),/IMAXE · Berazategui/);
+  const detail=await send('/centros/idim-belgrano-resonancia');const body=await detail.text();assert.match(body,/Consultado: 2026-09-13/);assert.match(body,/Resonancia magnética · sede Belgrano/);assert.match(body,/https:\/\/www.idim.com.ar/);
+  assert.equal(db.prepare('select count(*) as n from professionals').get().n,n);
+  assert.equal(db.prepare('select count(*) as n from directory_imports').get().n,1);
+  assert.deepEqual(db.prepare('PRAGMA foreign_key_check').all(),[]);
+  assert.throws(()=>db.prepare("insert into profile_evidence (id,kind,scope,summary,source_url,source_title,reviewed_at) values ('bad','ocd','x','x','x','x','x')").run());
 });
 test('Portable password verification accepts original Node scrypt hashes',async()=>{
   const salt=crypto.randomBytes(16), hash=crypto.scryptSync('legacy-password',salt,64);

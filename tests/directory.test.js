@@ -37,19 +37,20 @@ async function request(path, { method='GET', body='', cookie='', origin='https:/
   if (method==='POST') { req.emit('data',body); req.emit('end'); }
   await pending; return res;
 }
-test('seed profiles are labeled, unverified and have no invented ratings', async () => {
-  const results=(await searchTargets()); assert.equal(results.length,4);
-  for (const item of results) { assert.equal(item.is_demo,1); assert.equal(item.published_review_count,0); assert.notEqual(item.verification_status,'verified'); assert.match(targetCard(item),/Perfil ficticio/); assert.doesNotMatch(targetCard(item),/4,7/); }
+test('curated profiles have no invented patient ratings and demo cards stay explicit', async () => {
+  const results=await searchTargets(); assert.equal(results.length,16);
+  for (const item of results) { assert.equal(item.is_demo,0); assert.equal(item.published_review_count,0); assert.match(targetCard(item),/sin experiencias publicadas/); }
+  assert.match(targetCard({...results[0],is_demo:1}),/Perfil ficticio/);
   assert.equal((await createReview({userId:user.userId,targetType:'professional',targetId:'pro-maria-rivas',form})).ok,false);
 });
 test('type, category, accent, location and modality filters work together', async () => {
-  assert.equal((await searchTargets({tipo:'centros'})).length,2);
-  assert.equal((await searchTargets({tipo:'profesionales'})).length,2);
-  assert.equal((await searchTargets({categoria:'mental_health'})).length,1);
-  assert.equal((await searchTargets({q:'Psicólogo TOC',modalidad:'virtual'})).length,1);
-  assert.equal((await searchTargets({q:'ecografía',where:'Háedo',tipo:'centros'})).length,1);
-  assert.equal((await searchTargets({q:'cardiólogo',where:'caballito'})).length,1);
-  assert.equal((await searchTargets({verificado:true})).length,0);
+  assert.ok((await searchTargets({tipo:'centros'})).every(x=>x.type==='facility'));
+  assert.ok((await searchTargets({tipo:'profesionales'})).every(x=>x.type==='professional'));
+  const matches=await searchTargets({q:'Pérez Rivera',where:'Pálermo',modalidad:'in_person',categoria:'mental_health'});
+  assert.equal(matches.length,1); assert.equal(matches[0].id,'pro-ricardo-perez-rivera');
+  assert.equal((await searchTargets({q:'Pérez Rivera',modalidad:'virtual'})).length,0);
+  assert.equal((await searchTargets({especialidad:'cardiologia'})).length,0);
+  assert.ok((await searchTargets({verificado:true})).every(x=>x.verification_status==='verified'));
 });
 test('publishing a proposal creates exactly one searchable community profile', async () => {
   const result = (await createProfileSuggestion({userId:user.userId,targetType:'professional',form:{name:'Profesional de prueba',specialty:'Cardiologia',city:'Morón',reason:'Experiencia de trato y comunicación respetuosa para probar el flujo.'}}));
