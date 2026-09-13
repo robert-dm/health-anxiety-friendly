@@ -7,7 +7,8 @@
     "dev": "node --no-warnings src/server.js",
     "start": "node --no-warnings src/server.js",
     "db:migrate": "node --no-warnings src/db/migrate.js",
-    "db:seed": "node --no-warnings src/db/seed.js"
+    "db:seed": "node --no-warnings src/db/seed.js",
+    "user:admin": "node --no-warnings src/scripts/promote-admin.js"
   },
   "engines": {
     "node": ">=22.5"

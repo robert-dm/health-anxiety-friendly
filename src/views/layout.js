@@ -1,6 +1,14 @@
 import { escapeHtml } from "./html.js";
 
-export function layout({ title, body }) {
+export function layout({ title, body, user = null }) {
+  const adminLink = user && ["admin", "moderator"].includes(user.role) ? `<a href="/admin">Admin</a>` : "";
+  const accountLinks = user
+    ? `<a href="/cuenta">Mi actividad</a>
+        ${adminLink}
+        <form class="inline-form" method="post" action="/salir"><button type="submit">Salir</button></form>`
+    : `<a href="/ingresar">Ingresar</a>
+        <a href="/registro">Crear cuenta</a>`;
+
   return `<!doctype html>
 <html lang="es">
   <head>
@@ -21,6 +29,7 @@ export function layout({ title, body }) {
           <a href="/buscar?tipo=centros">Centros de estudios</a>
           <a href="/guias">Guias</a>
           <a href="/agregar">Agregar</a>
+          ${accountLinks}
         </div>
       </nav>
     </header>
