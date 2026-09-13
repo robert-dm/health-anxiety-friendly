@@ -8,9 +8,20 @@
     "start": "node --no-warnings src/server.js",
     "db:migrate": "node --no-warnings src/db/migrate.js",
     "db:seed": "node --no-warnings src/db/seed.js",
-    "user:admin": "node --no-warnings src/scripts/promote-admin.js"
+    "user:admin": "node --no-warnings src/scripts/promote-admin.js",
+    "test": "node --no-warnings --test tests/*.test.js",
+    "build": "node scripts/build.mjs",
+    "db:generate": "drizzle-kit generate"
   },
   "engines": {
     "node": ">=22.5"
+  },
+  "dependencies": {
+    "@noble/hashes": "^2.4.0",
+    "drizzle-orm": "^0.45.2"
+  },
+  "devDependencies": {
+    "drizzle-kit": "^0.31.10",
+    "esbuild": "^0.28.2"
   }
 }

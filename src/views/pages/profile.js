@@ -1,107 +1,20 @@
-import { statusPill } from "../components/cards.js";
-import { escapeHtml, formatRating, locationLabel } from "../html.js";
-
-function reviewsList(reviews) {
-  if (!reviews.length) {
-    return `<div class="card"><p>Todavia no hay experiencias publicadas.</p></div>`;
-  }
-
-  return `<div class="reviews">
-    ${reviews
-      .map((review) => {
-        const author = review.anonymous ? review.anonymous_name : review.display_name || "Usuario";
-        return `<article class="review">
-          <div class="meta">
-            <span class="score">${formatRating(review.overall_rating)} / 5</span>
-            <span>${escapeHtml(review.visit_type || "Tipo de consulta no informado")}</span>
-            <span>${escapeHtml(review.approx_visit_month || "Fecha aproximada no informada")}</span>
-          </div>
-          <p>${escapeHtml(review.comment || "Sin comentario libre.")}</p>
-          <p class="muted">${escapeHtml(author)} · ${review.helpful_count || 0} personas la marcaron util</p>
-        </article>`;
-      })
-      .join("")}
-  </div>`;
+import { statusPill, ratingSummary, categoryLabel } from '../components/cards.js';
+import { escapeHtml, formatRating, locationLabel } from '../html.js';
+import { reportReasons } from '../../domain/reports.js';
+import { minimumReviews } from '../../domain/ratings.js';
+const scoreLabels = { listening:'Escucha',respect:'Respeto',clear_communication:'Comunicación clara',non_alarmist:'Comunicación sin alarmismo',avoids_reassurance_seeking:'Evita alimentar comprobaciones',respects_limits:'Respeto de límites',rational_tests:'Indicación de estudios según el paciente',uncertainty_support:'Acompañamiento de la incertidumbre',understands_health_anxiety:'Comprensión de la ansiedad',staff_respect:'Trato del personal',communication_preferences:'Preferencias de comunicación',no_unrequested_findings:'Respeto al comunicar hallazgos',avoids_speculation:'Evita especular',low_anxiety_procedure:'Comunicación durante el estudio',organization:'Organización',overall_experience:'Experiencia general' };
+function reviewsList(reviews, user) {
+  if (!reviews.length) return `<div class="card"><p>Todavía no hay experiencias publicadas.</p></div>`;
+  return `<div class="reviews">${reviews.map(review => `<article class="review" id="experiencia-${escapeHtml(review.id)}"><div class="meta"><span class="score">${formatRating(review.overall_rating)} / 5</span><span>${escapeHtml(review.visit_type || 'Consulta')}</span><span>${escapeHtml(review.approx_visit_month || '')}</span></div><p>${escapeHtml(review.comment || 'Sin comentario libre.')}</p><p class="muted">${escapeHtml(review.anonymous ? 'Paciente anónimo' : review.display_name || 'Usuario')}</p>${user ? `<details class="report-form"><summary>Reportar esta experiencia</summary><form action="/reviews/${encodeURIComponent(review.id)}/reportar" method="post"><div class="field"><label for="motivo-${escapeHtml(review.id)}">Motivo</label><select id="motivo-${escapeHtml(review.id)}" name="reason" required><option value="">Seleccioná un motivo</option>${Object.entries(reportReasons).map(([value,label]) => `<option value="${value}">${label}</option>`).join('')}</select></div><div class="field"><label for="detalle-${escapeHtml(review.id)}">Detalle opcional, sin datos sensibles</label><textarea id="detalle-${escapeHtml(review.id)}" name="details" maxlength="1200" rows="3"></textarea></div><button class="button secondary" type="submit">Enviar a moderación</button></form></details>` : '<p><a class="text-link" href="/ingresar">Ingresá para reportar esta experiencia</a></p>'}</article>`).join('')}</div>`;
 }
-
-export function professionalPage({ professional }) {
-  return `<section class="section profile-grid">
-    <article>
-      <div class="meta">${statusPill(professional.verification_status)}</div>
-      <h1>${escapeHtml(professional.display_name)}</h1>
-      <p>${escapeHtml(professional.specialty_name || "Especialidad no informada")} · ${escapeHtml(locationLabel(professional))}</p>
-      <p>${escapeHtml(professional.bio || "")}</p>
-      <div class="disclaimer">Estas puntuaciones representan experiencias de usuarios y no constituyen una evaluacion de la calidad medica del profesional.</div>
-    </article>
-    <aside class="card">
-      <h2>Compatibilidad</h2>
-      <p><span class="score">${formatRating(professional.anxiety_compatibility_average)} / 5</span></p>
-      <p>${professional.published_review_count || 0} experiencias publicadas</p>
-      ${(professional.published_review_count || 0) < 6 ? `<p class="muted">Muestra pequena: interpretar con cautela.</p>` : ""}
-      <a class="button" href="/review/profesional/${professional.id}">Compartir experiencia</a>
-    </aside>
-  </section>
-
-  <section class="section profile-grid">
-    <article class="card">
-      <h2>Informacion profesional</h2>
-      <p><strong>Institucion:</strong> ${escapeHtml(professional.institution || "No informada")}</p>
-      <p><strong>Ubicacion:</strong> ${escapeHtml(professional.address_public || locationLabel(professional))}</p>
-      <p><strong>Fuente:</strong> ${escapeHtml(professional.source_notes || "No informada")}</p>
-    </article>
-    <aside class="card">
-      <h2>Valoraciones especificas</h2>
-      <p>Escucha, comunicacion clara, evita alarmismo, respeta limites y manejo de incertidumbre.</p>
-    </aside>
-  </section>
-
-  <section class="section">
-    <div class="section-header">
-      <h2>Experiencias</h2>
-      <a href="/review/profesional/${professional.id}">Escribir experiencia</a>
-    </div>
-    ${reviewsList(professional.reviews)}
-  </section>`;
+function profilePage(item, isProfessional, user) {
+  const name = isProfessional ? item.display_name : item.name;
+  const subtitle = isProfessional ? item.specialty_name : item.studyTypes.map(study => study.name).join(' · ');
+  const reviewUrl = `/review/${isProfessional ? 'profesional' : 'centro'}/${encodeURIComponent(item.id)}`;
+  const scores = item.is_demo || (item.published_review_count || 0) < minimumReviews ? [] : Object.entries(JSON.parse(item.score_breakdown_json || '{}'));
+  let website = null;
+  try { const url = new URL(item.website_url); if (['https:','http:'].includes(url.protocol) && !item.is_demo) website = url.href; } catch {}
+  return `<section class="section"><a class="text-link" href="/buscar">← Volver al directorio</a></section><section class="section profile-grid"><article><div class="meta">${statusPill(item.verification_status,item.is_demo)}</div><h1>${escapeHtml(name)}</h1><p>${escapeHtml(subtitle || categoryLabel(item.facility_type))} · ${escapeHtml(locationLabel(item))}</p><p>${escapeHtml(item.bio || item.description || '')}</p></article><aside class="card"><h2>Experiencias de atención</h2>${ratingSummary(item)}${item.is_demo ? '' : `<p><a class="button" href="${reviewUrl}">Compartir experiencia</a></p>`}</aside></section><section class="section profile-grid"><article class="card"><p class="eyebrow">DATOS DEL PERFIL</p><h2>${isProfessional ? 'Información profesional' : 'Información del centro'}</h2><p><strong>${isProfessional ? 'Institución' : 'Tipo'}:</strong> ${escapeHtml(isProfessional ? item.institution || 'No informada' : categoryLabel(item.facility_type))}</p><p><strong>Ubicación:</strong> ${escapeHtml(item.address_public || locationLabel(item))}</p>${isProfessional ? `<p><strong>Modalidad:</strong> ${JSON.parse(item.care_modes || '[]').map(mode => mode === 'virtual' ? 'Virtual' : 'Presencial').join(' · ') || 'No informada'}</p>` : ''}<p><strong>Fuente:</strong> ${escapeHtml(item.source_notes || 'Información pendiente de comprobación.')}</p>${website ? `<a class="text-link" href="${escapeHtml(website)}" rel="noopener noreferrer" target="_blank">Sitio del profesional o centro ↗</a>` : ''}<p class="small muted">Verificar datos básicos no implica recomendar la atención.</p></article><aside class="card"><p class="eyebrow">VALORACIONES DE PACIENTES</p><h2>Comunicación y trato</h2>${scores.length ? scores.map(([key,value]) => `<div class="rating-line"><span>${escapeHtml(scoreLabels[key] || key)}</span><strong>${formatRating(value)} / 5</strong></div>`).join('') : '<p>Los promedios se muestran a partir de seis experiencias publicadas. Ese mínimo no garantiza que la muestra sea representativa.</p>'}<p class="small muted">Estas opiniones no evalúan la calidad médica ni determinan si un estudio es necesario.</p></aside></section><section class="section"><div class="section-header"><h2>Experiencias</h2>${item.is_demo ? '' : `<a class="text-link" href="${reviewUrl}">Escribir experiencia</a>`}</div>${reviewsList(item.reviews,user)}</section>`;
 }
-
-export function facilityPage({ facility }) {
-  const studyTypes = facility.studyTypes.map((item) => item.name).join(" · ");
-
-  return `<section class="section profile-grid">
-    <article>
-      <div class="meta">${statusPill(facility.verification_status)}</div>
-      <h1>${escapeHtml(facility.name)}</h1>
-      <p>${escapeHtml(studyTypes || "Tipos de estudio no informados")} · ${escapeHtml(locationLabel(facility))}</p>
-      <p>${escapeHtml(facility.description || "")}</p>
-      <div class="disclaimer">Las experiencias describen comunicacion, trato y preferencias durante estudios. No reemplazan informacion medica ni administrativa actualizada.</div>
-    </article>
-    <aside class="card">
-      <h2>Compatibilidad</h2>
-      <p><span class="score">${formatRating(facility.anxiety_compatibility_average)} / 5</span></p>
-      <p>${facility.published_review_count || 0} experiencias publicadas</p>
-      ${(facility.published_review_count || 0) < 6 ? `<p class="muted">Muestra pequena: interpretar con cautela.</p>` : ""}
-      <a class="button" href="/review/centro/${facility.id}">Compartir experiencia</a>
-    </aside>
-  </section>
-
-  <section class="section profile-grid">
-    <article class="card">
-      <h2>Informacion del centro</h2>
-      <p><strong>Tipo:</strong> ${escapeHtml(facility.facility_type)}</p>
-      <p><strong>Ubicacion:</strong> ${escapeHtml(facility.address_public || locationLabel(facility))}</p>
-      <p><strong>Fuente:</strong> ${escapeHtml(facility.source_notes || "No informada")}</p>
-    </article>
-    <aside class="card">
-      <h2>Aspectos evaluados</h2>
-      <p>Trato, preferencias de comunicacion, comentarios durante el estudio, organizacion y claridad administrativa.</p>
-    </aside>
-  </section>
-
-  <section class="section">
-    <div class="section-header">
-      <h2>Experiencias</h2>
-      <a href="/review/centro/${facility.id}">Escribir experiencia</a>
-    </div>
-    ${reviewsList(facility.reviews)}
-  </section>`;
-}
+export function professionalPage({professional,user=null}) { return profilePage(professional,true,user); }
+export function facilityPage({facility,user=null}) { return profilePage(facility,false,user); }

@@ -15,8 +15,8 @@ export function loginPage({ errors = [], email = "" } = {}) {
         <input id="email" name="email" type="email" value="${escapeHtml(email)}" autocomplete="email" required>
       </div>
       <div class="field">
-        <label for="password">Contrasena</label>
-        <input id="password" name="password" type="password" autocomplete="current-password" required>
+        <label for="password">Contraseña</label>
+        <input id="password" name="password" type="password" autocomplete="current-password" maxlength="256" required>
       </div>
       <button class="button" type="submit">Ingresar</button>
     </form>
@@ -33,16 +33,16 @@ export function registerPage({ errors = [], values = {} } = {}) {
         <input id="email" name="email" type="email" value="${escapeHtml(values.email)}" autocomplete="email" required>
       </div>
       <div class="field">
-        <label for="password">Contrasena</label>
-        <input id="password" name="password" type="password" autocomplete="new-password" minlength="8" required>
+        <label for="password">Contraseña</label>
+        <input id="password" name="password" type="password" autocomplete="new-password" maxlength="256" minlength="8" required>
       </div>
       <div class="field">
         <label for="displayName">Nombre visible opcional</label>
-        <input id="displayName" name="displayName" value="${escapeHtml(values.displayName)}" autocomplete="nickname">
+        <input id="displayName" name="displayName" value="${escapeHtml(values.displayName)}" autocomplete="nickname" maxlength="80">
       </div>
       <label class="checkbox">
         <input name="acceptedGuidelines" type="checkbox" value="yes" ${values.acceptedGuidelines ? "checked" : ""} required>
-        <span>Acepto las normas de la comunidad</span>
+        <span>Acepto las <a href="/como-funciona" target="_blank" rel="noopener">normas de la comunidad</a></span>
       </label>
       <p class="muted">No solicitamos DNI, fecha de nacimiento, diagnostico, historia clinica ni domicilio personal.</p>
       <button class="button" type="submit">Crear cuenta</button>

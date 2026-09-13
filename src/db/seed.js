@@ -1,4 +1,4 @@
-import { getDb } from "./connection.js";
+import { getNodeDb as getDb } from "./node.js";
 import { migrate } from "./migrate.js";
 
 const now = new Date().toISOString();
@@ -12,6 +12,9 @@ export function seed() {
   migrate();
   const db = getDb();
 
+  if (process.env.DEMO_DATA !== '1') {
+    throw new Error('Seed contains fictitious profiles. Set DEMO_DATA=1 only for a development database.');
+  }
   const existing = db.prepare("select count(*) as count from specialties").get().count;
   if (existing > 0) {
     console.log("Seed data already exists");
@@ -138,19 +141,8 @@ export function seed() {
     ["fac-imagenes-caballito", "study-tac"],
   ]);
 
-  insertMany(
-    db,
-    `insert into profile_rating_summaries (
-      id, professional_id, facility_id, published_review_count, overall_average,
-      anxiety_compatibility_average, confidence_score, score_breakdown_json, updated_at
-    ) values (?, ?, ?, ?, ?, ?, ?, ?, ?)`,
-    [
-      ["sum-pro-maria-rivas", "pro-maria-rivas", null, 12, 4.7, 4.6, 0.78, JSON.stringify({ listening: 4.8, non_alarmist: 4.6 }), now],
-      ["sum-pro-laura-acosta", "pro-laura-acosta", null, 3, 4.9, 4.8, 0.32, JSON.stringify({ uncertainty_support: 4.8 }), now],
-      ["sum-fac-diagnostico-haedo", null, "fac-diagnostico-haedo", 5, 4.4, 4.3, 0.46, JSON.stringify({ no_unrequested_findings: 4.1 }), now],
-      ["sum-fac-imagenes-caballito", null, "fac-imagenes-caballito", 18, 4.5, 4.4, 0.82, JSON.stringify({ organization: 4.5 }), now],
-    ],
-  );
+  db.prepare("update professionals set is_demo = 1, verification_status = 'incomplete', source_notes = 'Perfil ficticio de demostración; no es una recomendación.' where id in ('pro-maria-rivas', 'pro-laura-acosta')").run();
+  db.prepare("update facilities set is_demo = 1, verification_status = 'incomplete', source_notes = 'Perfil ficticio de demostración; no es una recomendación.' where id in ('fac-diagnostico-haedo', 'fac-imagenes-caballito')").run();
 
   console.log("Seed data inserted");
 }

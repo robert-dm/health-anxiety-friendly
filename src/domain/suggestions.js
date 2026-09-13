@@ -7,7 +7,7 @@ function clean(value, max = 240) {
   return String(value || "").trim().slice(0, max);
 }
 
-export function createProfileSuggestion({ userId, targetType, form }) {
+export async function createProfileSuggestion({ userId, targetType, form }) {
   const errors = [];
   const normalizedTargetType = allowedTargets.has(targetType) ? targetType : "";
 
@@ -32,18 +32,23 @@ export function createProfileSuggestion({ userId, targetType, form }) {
   if (!payload.reason || payload.reason.length < 20) errors.push("Contanos brevemente por que puede ser util para la comunidad.");
   if (payload.reason.length > 1200) errors.push("La descripcion es demasiado larga.");
 
+  if (String(form.reason || '').trim().length > 1200) errors.push("La descripción no puede superar 1200 caracteres.");
+  if (payload.website_url) {
+    try { if (!['http:','https:'].includes(new URL(payload.website_url).protocol)) throw new Error(); }
+    catch { errors.push("Ingresá una dirección web que empiece con https:// o http://."); }
+  }
   if (errors.length) return { ok: false, errors };
 
-  getDb()
+  (await getDb()
     .prepare("insert into profile_suggestions (id, submitted_by, target_type, payload_json, status, created_at) values (?, ?, ?, ?, 'pending', ?)")
-    .run(crypto.randomUUID(), userId, normalizedTargetType, JSON.stringify(payload), new Date().toISOString());
+    .run(crypto.randomUUID(), userId, normalizedTargetType, JSON.stringify(payload), new Date().toISOString()));
 
   return { ok: true };
 }
 
-export function getUserSuggestions(userId) {
-  return getDb()
+export async function getUserSuggestions(userId) {
+  return (await getDb()
     .prepare("select id, target_type, payload_json, status, created_at from profile_suggestions where submitted_by = ? order by created_at desc limit 20")
-    .all(userId)
+    .all(userId))
     .map((row) => ({ ...row, payload: JSON.parse(row.payload_json) }));
 }

@@ -1,17 +1,10 @@
-import fs from "node:fs";
-import path from "node:path";
-import { DatabaseSync } from "node:sqlite";
-import { config } from "../config.js";
-
-let database;
-
+import { AsyncLocalStorage } from "node:async_hooks";
+const databases = new AsyncLocalStorage();
+let defaultDatabase;
+export function setDefaultDatabase(db) { defaultDatabase = db; }
+export function withDatabase(db, callback) { return databases.run(db, callback); }
 export function getDb() {
-  if (!database) {
-    const directory = path.dirname(config.databasePath);
-    fs.mkdirSync(directory, { recursive: true });
-    database = new DatabaseSync(config.databasePath);
-    database.exec("PRAGMA foreign_keys = ON;");
-  }
-
-  return database;
+  const db = databases.getStore() || defaultDatabase;
+  if (!db) throw new Error("Database not initialized");
+  return db;
 }

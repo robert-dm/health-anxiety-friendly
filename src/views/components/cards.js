@@ -1,33 +1,21 @@
 import { escapeHtml, formatRating, locationLabel } from "../html.js";
-
-export function statusPill(status) {
-  if (status === "verified") return `<span class="pill verified">Informacion verificada</span>`;
-  if (status === "claimed") return `<span class="pill verified">Perfil reclamado</span>`;
+import { minimumReviews } from "../../domain/ratings.js";
+export function statusPill(status, isDemo = false) {
+  if (isDemo) return `<span class="pill">Perfil de ejemplo</span>`;
+  if (status === "verified") return `<span class="pill verified">Información básica verificada</span>`;
+  if (status === "claimed") return `<span class="pill">Perfil reclamado</span>`;
   if (status === "community") return `<span class="pill community">Agregado por la comunidad</span>`;
-  return `<span class="pill">Informacion incompleta</span>`;
+  return `<span class="pill">Información incompleta</span>`;
 }
-
-export function targetCard(item) {
-  const path = item.type === "professional" ? `/profesionales/${item.slug}` : `/centros/${item.slug}`;
-  const type = item.type === "professional" ? "Profesional" : "Centro";
+export function categoryLabel(value) { return ({diagnostic_center:'Centro de diagnóstico',clinic:'Clínica',lab:'Laboratorio',hospital:'Hospital',other:'Centro de salud'})[value] || value || 'Especialidad no informada'; }
+export function ratingSummary(item) {
   const count = item.published_review_count || 0;
-  const sample = count < 6 ? `<span class="pill">Pocas experiencias</span>` : "";
-
-  return `<article class="card result-card">
-    <div>
-      <div class="meta">
-        <span class="pill">${type}</span>
-        ${statusPill(item.verification_status)}
-        ${sample}
-      </div>
-      <h3>${escapeHtml(item.name)}</h3>
-      <p>${escapeHtml(item.category || "Categoria no informada")} · ${escapeHtml(locationLabel(item))}</p>
-      <div class="meta">
-        <span class="score">${formatRating(item.overall_average)} / 5</span>
-        <span>${formatRating(item.anxiety_compatibility_average)} compatibilidad</span>
-        <span>${count} experiencias</span>
-      </div>
-    </div>
-    <a class="button secondary" href="${path}">Ver perfil</a>
-  </article>`;
+  if (item.is_demo) return `<p class="demo-notice">Perfil ficticio para explorar el sitio. No corresponde a una recomendación real.</p>`;
+  if (!count) return `<p class="data-note">Todavía sin experiencias publicadas.</p>`;
+  if (count < minimumReviews) return `<p class="data-note">${count} experiencia${count === 1 ? '' : 's'} · Aún no mostramos un promedio: hay pocas valoraciones.</p>`;
+  return `<div class="meta"><span class="score">${formatRating(item.overall_average)} / 5 en trato general</span><span>${count} experiencias</span></div><p class="data-note">Comunicación y atención de la ansiedad: ${formatRating(item.anxiety_compatibility_average)}${item.anxiety_compatibility_average == null ? '' : ' / 5'}. Opiniones de pacientes.</p>`;
+}
+export function targetCard(item) {
+  const path = item.type === 'professional' ? `/profesionales/${encodeURIComponent(item.slug)}` : `/centros/${encodeURIComponent(item.slug)}`;
+  return `<article class="card result-card"><div><div class="meta"><span class="pill">${item.type === 'professional' ? 'Profesional' : 'Centro de estudios'}</span>${statusPill(item.verification_status, item.is_demo)}</div><h3><a href="${path}">${escapeHtml(item.name)}</a></h3><p>${escapeHtml(categoryLabel(item.category))} · ${escapeHtml(locationLabel(item))}</p>${ratingSummary(item)}</div><a class="button secondary" href="${path}" aria-label="Ver perfil de ${escapeHtml(item.name)}">Ver perfil ↗</a></article>`;
 }

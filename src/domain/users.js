@@ -6,12 +6,15 @@ function normalizeEmail(email) {
   return String(email || "").trim().toLowerCase();
 }
 
-export function registerUser({ email, password, displayName, acceptedGuidelines }) {
+export async function registerUser({ email, password, displayName, acceptedGuidelines }) {
   const normalizedEmail = normalizeEmail(email);
   const errors = [];
 
   if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(normalizedEmail)) errors.push("Ingresa un email valido.");
   if (String(password || "").length < 8) errors.push("La contrasena debe tener al menos 8 caracteres.");
+  if (normalizedEmail.length > 254) errors.push("El email es demasiado largo.");
+  if (String(password || "").length > 256) errors.push("La contraseña no puede superar 256 caracteres.");
+  if (String(displayName || "").trim().length > 80) errors.push("El nombre visible no puede superar 80 caracteres.");
   if (!acceptedGuidelines) errors.push("Tenes que aceptar las normas de la comunidad.");
 
   if (errors.length) return { ok: false, errors };
@@ -21,7 +24,7 @@ export function registerUser({ email, password, displayName, acceptedGuidelines 
 
   try {
     const userId = crypto.randomUUID();
-    getDb()
+    (await getDb()
       .prepare(
         `
         insert into users (
@@ -33,13 +36,13 @@ export function registerUser({ email, password, displayName, acceptedGuidelines 
       .run(
         userId,
         normalizedEmail,
-        hashPassword(password),
+        await hashPassword(password),
         String(displayName || "").trim() || null,
         anonymousName,
         now,
         now,
         now,
-      );
+      ));
 
     return { ok: true, userId };
   } catch (error) {
@@ -48,12 +51,13 @@ export function registerUser({ email, password, displayName, acceptedGuidelines 
   }
 }
 
-export function authenticateUser({ email, password }) {
-  const user = getDb()
+export async function authenticateUser({ email, password }) {
+  if (String(password || "").length > 256) return { ok: false, errors: ["Email o contraseña incorrectos."] };
+  const user = (await getDb()
     .prepare("select id, password_hash, status from users where email = ?")
-    .get(normalizeEmail(email));
+    .get(normalizeEmail(email)));
 
-  if (!user || !verifyPassword(password, user.password_hash)) {
+  if (!user || !(await verifyPassword(password, user.password_hash))) {
     return { ok: false, errors: ["Email o contrasena incorrectos."] };
   }
 

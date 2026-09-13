@@ -45,8 +45,7 @@ function suggestionCard(suggestion) {
       <p class="muted">${escapeHtml(suggestion.submitter_email)}</p>
     </div>
     ${actionForm("/admin/suggestions/status", suggestion.id, [
-      ["published", "Marcar publicada"],
-      ["verified", "Marcar verificada"],
+      ["published", "Publicar perfil comunitario"],
       ["rejected", "Rechazar"],
     ])}
   </article>`;

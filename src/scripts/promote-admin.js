@@ -1,5 +1,5 @@
 import { fileURLToPath } from "node:url";
-import { getDb } from "../db/connection.js";
+import { getNodeDb as getDb } from "../db/node.js";
 import { migrate } from "../db/migrate.js";
 
 export function promoteAdmin(email) {

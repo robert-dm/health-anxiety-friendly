@@ -1,31 +1,6 @@
 import { escapeHtml } from "../html.js";
 import { targetCard } from "../components/cards.js";
-
-export function searchPage({ q, where, results }) {
-  const title = q || where ? `Resultados para ${[q, where].filter(Boolean).map(escapeHtml).join(" cerca de ")}` : "Buscar profesionales y centros";
-
-  return `<section class="section">
-    <h1>${title}</h1>
-    <form class="hero-panel search-form" action="/buscar" method="get">
-      <div class="field">
-        <label for="q">Que estas buscando?</label>
-        <input id="q" name="q" type="search" value="${escapeHtml(q)}" placeholder="Psicologo TOC, cardiologo, ecografia...">
-      </div>
-      <div class="field">
-        <label for="where">Donde?</label>
-        <input id="where" name="where" type="search" value="${escapeHtml(where)}" placeholder="Haedo, Moron, CABA...">
-      </div>
-      <button class="button" type="submit">Buscar</button>
-    </form>
-  </section>
-
-  <section class="section">
-    <div class="section-header">
-      <h2>${results.length} resultado${results.length === 1 ? "" : "s"}</h2>
-      <p>No mostramos fragmentos negativos de experiencias en resultados.</p>
-    </div>
-    <div class="result-list">
-      ${results.length ? results.map(targetCard).join("") : `<div class="card"><h3>No encontramos resultados</h3><p>Proba con otra especialidad, estudio o zona.</p></div>`}
-    </div>
-  </section>`;
+const options = (values, selected) => values.map(([value,label]) => `<option value="${value}" ${value === selected ? 'selected' : ''}>${label}</option>`).join('');
+export function searchPage({ q = '', where = '', tipo = '', categoria = '', modalidad = '', verificado = false, results }) {
+  return `<section class="section"><p class="eyebrow">ENCONTRÁ TU PRÓXIMO ESPACIO DE ATENCIÓN</p><h1>Profesionales y centros</h1><form action="/buscar" method="get" role="search"><div class="directory-search"><div class="field"><label for="q">¿Qué atención necesitás?</label><input id="q" name="q" type="search" value="${escapeHtml(q)}" placeholder="Psicólogo TOC, cardiología, ecografía…"></div><div class="field"><label for="where">¿En qué zona?</label><input id="where" name="where" type="search" value="${escapeHtml(where)}" placeholder="Haedo, Morón, CABA…"></div><button class="button" type="submit">Buscar atención ↗</button></div><div class="search-filters"><div class="field"><label for="tipo">Tipo de perfil</label><select id="tipo" name="tipo">${options([['','Todos'],['profesionales','Profesionales'],['centros','Centros de estudios']], tipo)}</select></div><div class="field"><label for="categoria">Área profesional</label><select id="categoria" name="categoria">${options([['','Todas'],['mental_health','Psicología y psiquiatría'],['medical','Especialidades médicas']], categoria)}</select></div><div class="field"><label for="modalidad">Modalidad profesional</label><select id="modalidad" name="modalidad">${options([['','Todas'],['in_person','Presencial'],['virtual','Virtual']], modalidad)}</select></div><label class="checkbox"><input type="checkbox" name="verificado" value="1" ${verificado ? 'checked' : ''}>Información verificada</label><a class="text-link" href="/buscar">Limpiar filtros</a></div></form></section><section class="section"><div class="section-header"><h2>${results.length} resultado${results.length === 1 ? '' : 's'}</h2><span class="small muted">Más experiencias primero · Sin ranking de calidad médica</span></div><div class="result-list">${results.length ? results.map(targetCard).join('') : `<article class="card empty-state"><h3>No encontramos perfiles con esos filtros</h3><p>Probá ampliar la zona o cambiar la especialidad. También podés proponer un profesional o centro.</p><a class="button secondary" href="/buscar">Ver todo el directorio</a> <a class="text-link" href="/agregar">Proponer un perfil</a></article>`}</div></section>`;
 }

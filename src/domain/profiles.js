@@ -1,8 +1,9 @@
+import { getRatingSummary } from "./ratings.js";
 import { getDb } from "../db/connection.js";
 
-export function getProfessionalBySlug(slug) {
+export async function getProfessionalBySlug(slug) {
   const db = getDb();
-  const professional = db
+  const professional = (await db
     .prepare(
       `
       select
@@ -23,16 +24,17 @@ export function getProfessionalBySlug(slug) {
       where p.slug = ? and p.verification_status != 'suspended'
     `,
     )
-    .get(slug);
+    .get(slug));
 
   if (!professional) return null;
-  professional.reviews = getReviews({ professionalId: professional.id });
+  Object.assign(professional, await getRatingSummary({ professionalId: professional.id }));
+  professional.reviews = await getReviews({ professionalId: professional.id });
   return professional;
 }
 
-export function getFacilityBySlug(slug) {
+export async function getFacilityBySlug(slug) {
   const db = getDb();
-  const facility = db
+  const facility = (await db
     .prepare(
       `
       select
@@ -51,10 +53,11 @@ export function getFacilityBySlug(slug) {
       where f.slug = ? and f.verification_status != 'suspended'
     `,
     )
-    .get(slug);
+    .get(slug));
 
   if (!facility) return null;
-  facility.studyTypes = db
+  Object.assign(facility, await getRatingSummary({ facilityId: facility.id }));
+  facility.studyTypes = (await db
     .prepare(
       `
       select st.name
@@ -64,14 +67,14 @@ export function getFacilityBySlug(slug) {
       order by st.name
     `,
     )
-    .all(facility.id);
-  facility.reviews = getReviews({ facilityId: facility.id });
+    .all(facility.id));
+  facility.reviews = await getReviews({ facilityId: facility.id });
   return facility;
 }
 
-function getReviews({ professionalId = null, facilityId = null }) {
+async function getReviews({ professionalId = null, facilityId = null }) {
   const db = getDb();
-  return db
+  return (await db
     .prepare(
       `
       select
@@ -93,5 +96,5 @@ function getReviews({ professionalId = null, facilityId = null }) {
       limit 10
     `,
     )
-    .all({ professionalId, facilityId });
+    .all({ professionalId, facilityId }));
 }
